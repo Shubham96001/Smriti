@@ -1,0 +1,8 @@
+{
+  "name": "SmritiSaathi",
+  "short_name": "SmritiSaathi",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f7f3",
+  "theme_color": "#245f52"
+}

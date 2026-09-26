@@ -1,25 +1,41 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
-import { PatientRegistrationPage, CaregiverRegistrationPage, PatientLoginPage, CaregiverLoginPage } from './pages/AuthPages';
-import DashboardPage from './pages/DashboardPage';
-import BaselineAssessmentPage from './pages/BaselineAssessmentPage';
-import './index.css';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import PatientDashboard from './pages/PatientDashboard';
+import RudasPage from './pages/RudasPage';
+import GamesPage from './pages/GamesPage';
+import MemoryPage from './pages/MemoryPage';
+import RemindersPage from './pages/RemindersPage';
+import ApprovalsPage from './pages/ApprovalsPage';
+import CaregiverDashboard from './pages/CaregiverDashboard';
+import HealthcareWorkerDashboard from './pages/HealthcareWorkerDashboard';
+import HealthCheckPage from './pages/HealthCheckPage';
+import ProtectedRoute from './components/ProtectedRoute';
+import OfflineBanner from './components/OfflineBanner';
+import { AuthProvider } from './context/AuthContext';
+import { LocaleProvider } from './context/LocaleContext';
+import { OfflineProvider } from './offline/OfflineProvider';
+import './styles/global.css';
 
-function App() {
+export default function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/register/patient" element={<PatientRegistrationPage />} />
-        <Route path="/register/caregiver" element={<CaregiverRegistrationPage />} />
-        <Route path="/login/patient" element={<PatientLoginPage />} />
-        <Route path="/login/caregiver" element={<CaregiverLoginPage />} />
-        <Route path="/assessment" element={<BaselineAssessmentPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Router>
+    <LocaleProvider><AuthProvider><OfflineProvider><BrowserRouter><OfflineBanner /><Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/health" element={<HealthCheckPage />} />
+      <Route element={<ProtectedRoute roles={['patient']} />}>
+        <Route path="/assessment/rudas" element={<RudasPage />} />
+        <Route path="/patient" element={<PatientDashboard />} />
+        <Route path="/games" element={<GamesPage />} />
+        <Route path="/memory" element={<MemoryPage />} />
+        <Route path="/reminders" element={<RemindersPage />} />
+        <Route path="/approvals" element={<ApprovalsPage />} />
+      </Route>
+      <Route element={<ProtectedRoute roles={['caregiver']} />}><Route path="/caregiver" element={<CaregiverDashboard />} /></Route>
+      <Route element={<ProtectedRoute roles={['hcw']} />}><Route path="/healthcare-worker" element={<HealthcareWorkerDashboard />} /></Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes></BrowserRouter></OfflineProvider></AuthProvider></LocaleProvider>
   );
 }
-
-export default App;

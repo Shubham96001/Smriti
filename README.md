@@ -1,230 +1,63 @@
 # SmritiSaathi
 
-SmritiSaathi is a patient-centered digital support platform for older adults. It helps users stay engaged through cognitive activities, memory support, reminders, and caregiver-assisted monitoring while keeping the experience simple, accessible, and low-friction.
+## 1. Project overview
+SmritiSaathi is an elderly-friendly platform for cognitive games, memory notes, routine reminders, and consent-based caregiver support.
 
-This project combines a FastAPI backend, a React + Vite frontend, and a relational database layer designed for local deployment. The current implementation includes patient and caregiver registration, JWT authentication, role-based access, and a one-time baseline RUDAS assessment flow for patients.
+## 2. Intended use
+The application provides supportive activities and organization tools. It is not a diagnostic medical system.
 
-> This project is for supportive care and monitoring. It does not provide a medical diagnosis.
+## 3. Current scope
+The repository includes account registration, login, placeholder baseline flow, Memory Match, memory notes, reminders, caregiver approvals, and offline record scaffolding.
 
----
+## 4. Technology
+The client uses React, Vite, and plain CSS. The API uses Python, FastAPI, Pydantic, psycopg, and PostgreSQL. Passwords use bcrypt and access tokens use signed HS256 JWTs.
 
-## Project overview
+## 5. Repository map
+New backend modules are flat domain packages under `backend/`; PostgreSQL migrations are in `backend/sql/`. Frontend routes, contexts, games, services, offline support, and styles are under `frontend/src/`. Project documentation is in `docs/`; tests are in `tests/`. The retired nested backend files and local database files remain pending cleanup.
 
-### Who this is for
-- Patients who need a simplified digital companion for routine support, memory cues, and cognitive engagement
-- Caregivers who need a secure way to support family members or dependents
-- Developers who want a clean starter project with a backend, frontend, and database structure already modeled
+## 6. Requirements
+Use Python 3.10 or newer, Node.js 20.19+ or 22.12+, npm, and a local PostgreSQL server. Use a current browser with IndexedDB support for offline scaffolding.
 
-### What is implemented
-- FastAPI backend with JWT auth
-- Patient and caregiver registration flows
-- Role-based login and protected routes
-- Patient baseline RUDAS assessment flow
-- Local DB-ready model layer with SQLAlchemy
-- React landing page and auth screens
-- Vite frontend with routes for landing, registration, login, dashboard, and baseline assessment
+## 7. Backend environment
+From the repository root, create and activate a virtual environment, then install `backend/requirements.txt`. If `backend/.env` does not already exist, copy `backend/.env.example` to it. Set a local database URL and a private random JWT secret without replacing existing local credentials.
 
-### Tech stack
-- Backend: Python, FastAPI, SQLAlchemy, Pydantic
-- Frontend: React, Vite, React Router
-- Database: PostgreSQL-ready SQLAlchemy configuration; SQLite fallback available for local development
-- Auth: JWT + bcrypt password hashing
+## 8. Configuration
+`DATABASE_URL` accepts a PostgreSQL libpq URL. `JWT_SECRET_KEY`, `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`, and `FRONTEND_ORIGIN` configure authentication and browser access. Never commit the local `.env`.
 
----
+## 9. Database migrations
+Run `python sql/run_migrations.py` from `backend/`. The runner applies numbered SQL files in lexical order and tracks successful versions.
 
-## Repository structure
+## 10. Start the API
+From `backend/`, run `python -m uvicorn main:app --reload --port 8000`. Health is available at `/api/health`; interactive OpenAPI docs are at `/docs`.
 
-```text
-SmritiSarthi/
-├── backend/
-│   ├── app/
-│   │   ├── api/
-│   │   ├── core/
-│   │   ├── models/
-│   │   ├── schemas/
-│   │   ├── services/
-│   │   └── main.py
-│   ├── alembic/
-│   ├── requirements.txt
-│   ├── .env.example
-│   └── smritisaathi.db
-├── frontend/
-│   ├── src/
-│   ├── package.json
-│   ├── vite.config.js
-│   └── index.html
-├── README.md
-├── .gitignore
-└── .env.example
-```
+## 11. Frontend setup
+From `frontend/`, run `npm install` and `npm run dev`. Vite serves the app on port 5173 and proxies `/api` to the local API.
 
----
+## 12. Authentication
+Register at `/register` as a patient, caregiver, or healthcare worker. Sign in at `/login`. The client stores the signed access token locally and sends it as a Bearer token.
 
-## Local setup
+## 13. Patient onboarding
+Patient accounts go to `/assessment/rudas`. Each response is persisted when advancing. The baseline is complete after all six placeholder items have responses; the dashboard directs incomplete accounts back to the assessment.
 
-### 1. Install prerequisites
-- Python 3.10+
-- Node.js 18+
-- PostgreSQL 14+ recommended for the intended local setup
+## 14. Assessment notice
+The seeded English items are generic development placeholders under `placeholder-v1`, not the real RUDAS. They have no clinical scoring or diagnostic interpretation.
 
-### 2. Backend setup
+## 15. Patient tools
+The patient dashboard links to Memory Match, memory notes, reminders, and caregiver approvals. Activity summary values are fetched from the API.
 
-From the project root:
+## 16. Caregiver access
+Caregivers request a connection by patient email. Patients approve or decline requests. Caregiver reads require an approved relationship; requests outside the relationship return not found.
 
-```bash
-cd backend
-python -m venv .venv
-```
+## 17. Adaptive difficulty
+The adaptive engine is a pure conservative rule. It changes at most one level per decision, needs more evidence to increase than to decrease, and includes unit tests.
 
-On Windows:
+## 18. Localization and accessibility
+English is the fallback locale. Hindi and Marathi files contain a small scaffold only; they are not validated translations. Controls use large touch targets, keyboard focus indicators, and optional speech output where supported.
 
-```powershell
-backend\.venv\Scripts\Activate.ps1
-```
+## 19. Offline behavior
+The client queues sync records in IndexedDB and flushes when online. The service worker handles only static application content and never caches API responses.
 
-Then install dependencies:
+## 20. Verification and limitations
+Run `pytest -q`, `python scripts/security_audit.py`, and `cd frontend && npm run build`. Integration tests create and remove only a loopback `<database>_test` database; they skip if the test database already exists or local PostgreSQL is unavailable. Placeholder content, translations, offline replay, healthcare-worker access, and the remaining legacy-file cleanup are not complete production workflows.
 
-```bash
-pip install -r requirements.txt
-```
-
-Create a local environment file from the sample:
-
-```bash
-copy .env.example .env
-```
-
-Update the values in backend/.env with your local database credentials:
-
-```env
-APP_ENV=development
-DATABASE_URL=postgresql+asyncpg://postgres:YOUR_PASSWORD@localhost:5432/smritisaathi
-DATABASE_URL_SYNC=postgresql://postgres:YOUR_PASSWORD@localhost:5432/smritisaathi
-JWT_SECRET_KEY=replace_with_a_secure_development_secret
-JWT_ALGORITHM=HS256
-CORS_ORIGINS=http://localhost:5173,http://localhost:5174
-```
-
-If Postgres is not available yet, the app keeps a SQLite fallback so local startup still works.
-
-### 3. Start backend
-
-```bash
-cd backend
-.venv\Scripts\python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
-```
-
-Then open:
-- API docs: http://127.0.0.1:8000/docs
-- Health check: http://127.0.0.1:8000/health
-
-### 4. Frontend setup
-
-From the project root:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Then open:
-- App: http://localhost:5173
-
----
-
-## Important app flow
-
-### Patient flow
-1. User lands on the landing page
-2. User chooses Register as Patient or Patient Login
-3. New patient registers with basic profile information
-4. If the patient is new, they complete the RUDAS baseline assessment
-5. Baseline data is saved and the patient profile is marked complete
-6. Future logins move them to the dashboard without repeating the baseline unless it is intentionally reset
-
-### Caregiver flow
-1. User lands on the landing page
-2. User chooses Register as Caregiver or Caregiver Login
-3. Caregiver account is created and linked to authorized support workflows
-4. Caregiver can review support access and monitoring flows
-
-### Authentication model
-- Passwords are hashed using bcrypt
-- JWT tokens are used for authenticated API access
-- Protected endpoints enforce role-based access
-
----
-
-## Database and model notes
-
-The application is structured around a relational database model with these main concerns:
-
-- users: login credentials and role
-- patient_profiles: patient data and baseline completion flag
-- caregiver_profiles: caregiver details and access metadata
-- rudas_assessments / rudas_responses: baseline cognitive assessment and scoring
-- game_sessions / game_events: activity tracking and adaptive behavior logs
-- memory_items: saved memory support data
-- reminders / reminder_events: routine and medicine support tracking
-- audit_logs / caregiver_alerts: monitoring and support records
-
-This is designed to support a local PostgreSQL deployment while staying easy to develop and test locally.
-
----
-
-## Project status
-
-### Completed
-- Backend app scaffolding and routing
-- Auth API and JWT flow
-- Patient and caregiver registration
-- Patient baseline RUDAS flow
-- Frontend landing page and registration/login screens
-- Vite project setup for React
-
-### Planned / next steps
-- Full caregiver-patient linking and authorization flows
-- Database migrations via Alembic for production-safe schema evolution
-- Real patient dashboard data from DB-backed services
-- Cognitive games, reminders, and memory features tied to live records
-- More advanced tests and validation coverage
-
----
-
-## Testing
-
-Run backend tests with:
-
-```bash
-cd backend
-.venv\Scripts\python -m pytest
-```
-
-Run frontend build validation with:
-
-```bash
-cd frontend
-npm run build
-```
-
----
-
-## Security notes
-- Do not commit .env files to Git
-- Keep secrets out of the repository
-- Use local Postgres credentials only for local development
-- Keep JWT secret keys unique and strong in production
-
----
-
-## Contributing
-
-1. Clone the repository
-2. Create a local virtual environment and install backend dependencies
-3. Set up Postgres credentials in backend/.env
-4. Start the backend and frontend services
-5. Create a feature branch before making changes
-6. Run the relevant tests and build checks before pushing
-
-This repository is intended to be easy for the next developer to understand, run, and extend without hidden setup steps.
+See [docs/architecture.md](docs/architecture.md), [docs/api.md](docs/api.md), [docs/security.md](docs/security.md), and [docs/demo.md](docs/demo.md) for implementation details.

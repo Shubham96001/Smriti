@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Anatomical Brain Simulation: Exploded View</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #111; color: white; font-family: sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; }
+        #ui-panel { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; border: 1px solid #444; }
+        button { background: #333; color: white; border: 1px solid #666; padding: 10px 15px; cursor: pointer; border-radius: 5px; font-weight: bold; transition: 0.2s; }
+        button:hover { background: #555; }
+        .active { background: #4CAF50; border-color: #4CAF50; }
+        #title-bar { position: absolute; top: 15px; width: 100%; text-align: center; pointer-events: none; }
+        .label-container { display: flex; justify-content: space-around; width: 100%; margin-top: 10px; }
+        .label { font-size: 18px; font-weight: bold; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 5px; }
+    </style>
+    <!-- Import Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+    <div id="title-bar">
+        <h2>Decode the Brain: Anatomical Layers</h2>
+        <div class="label-container">
+            <div class="label">NORMAL BRAIN (Healthy Tissues)</div>
+            <div class="label">ALZHEIMER'S (Atrophy & Enlargement)</div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <button id="btn-explode">💥 EXPLODE / ASSEMBLE</button>
+        <button class="active" id="btn-grey">Toggle Grey Matter (Cortex)</button>
+        <button class="active" id="btn-white">Toggle White Matter (Fibers)</button>
+        <button class="active" id="btn-hippo">Toggle Hippocampus</button>
+        <button class="active" id="btn-vent">Toggle Ventricles (Fluid)</button>
+        <button class="active" id="btn-stem">Toggle Cerebellum & Brainstem</button>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script>
+        // 1. SCENE SETUP
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 25);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        // Lighting
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // State Variables for Animation
+        let isExploded = false;
+        const parts = { grey: true, white: true, hippo: true, vent: true, stem: true };
+
+        // 2. PROCEDURAL ANATOMY GENERATORS
+        // Creates the wrinkled outer layer (Grey Matter) or smoother inner layer (White Matter)
+        function createCerebrum(color, scale, isGrey, atrophyLevel) {
+            const geo = new THREE.IcosahedronGeometry(2, 30);
+            const pos = geo.attributes.position;
+            const vec = new THREE.Vector3();
+            for (let i = 0; i < pos.count; i++) {
+                vec.fromBufferAttribute(pos, i);
+                const noise = Math.sin(vec.x * 4) * Math.cos(vec.y * 4) * Math.sin(vec.z * 4);
+                // Grey matter is wrinkled; white matter is smoother. Alzheimer's makes grooves much deeper.
+                let depth = isGrey ? (atrophyLevel === 'high' ? 0.4 : 0.1) : 0.05;
+                vec.addScaledVector(vec.normalize(), noise * depth);
+                pos.setXYZ(i, vec.x, vec.y, vec.z);
+            }
+            geo.computeVertexNormals();
+            
+            // Grey matter is slightly transparent so we can see the white matter inside
+            const mat = new THREE.MeshStandardMaterial({ 
+                color: color, roughness: 0.7, transparent: isGrey, opacity: isGrey ? 0.4 : 1.0 
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.scale.set(scale, scale * 1.1, scale * 1.25);
+            return mesh;
+        }
+
+        function createHippocampus(scale) {
+            const geo = new THREE.TorusKnotGeometry(0.5, 0.2, 64, 8);
+            const mat = new THREE.MeshStandardMaterial({ color: 0x32cd32 }); // Green
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.scale.set(scale, scale, scale);
+            mesh.position.set(0, -0.5, 0); // Deep inside
+            return mesh;
+        }
+
+        function createVentricles(scale) {
+            const geo = new THREE.SphereGeometry(0.8, 16, 16);
+            const mat = new THREE.MeshStandardMaterial({ color: 0x1e90ff, transparent: true, opacity: 0.8 }); // Blue fluid
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.scale.set(scale, scale, scale * 1.5);
+            return mesh;
+        }
+
+        function createLowerBrain(scale) {
+            const group = new THREE.Group();
+            
+            // Cerebellum (Back and bottom)
+            const cerGeo = new THREE.SphereGeometry(1.2, 32, 32);
+            const cerMat = new THREE.MeshStandardMaterial({ color: 0xd2691e, roughness: 0.9 }); // Orange/Brown
+            const cerebellum = new THREE.Mesh(cerGeo, cerMat);
+            cerebellum.position.set(0, -1.5, -1.8);
+            cerebellum.scale.set(1, 0.6, 1);
+            group.add(cerebellum);
+
+            // Brainstem / Medulla Oblongata (Stalk connecting to spine)
+            const stemGeo = new THREE.CylinderGeometry(0.4, 0.3, 2.5, 16);
+            const stemMat = new THREE.MeshStandardMaterial({ color: 0xf5deb3 }); // Pale Tan
+            const brainstem = new THREE.Mesh(stemGeo, stemMat);
+            brainstem.position.set(0, -2.5, -0.5);
+            group.add(brainstem);
+            
+            group.scale.set(scale, scale, scale);
+            return group;
+        }
+
+        // 3. BUILD THE TWO BRAIN GROUPS
+        const normalBrain = new THREE.Group();
+        normalBrain.position.x = -5;
+        scene.add(normalBrain);
+
+        const adBrain = new THREE.Group();
+        adBrain.position.x = 5;
+        scene.add(adBrain);
+
+        // Normal Brain Parts (Healthy Scales)
+        const nGrey = createCerebrum(0xffb6c1, 1.0, true, 'low');
+        const nWhite = createCerebrum(0xfffacd, 0.85, false, 'low');
+        const nHippo = createHippocampus(1.0);
+        const nVent = createVentricles(1.0);
+        const nStem = createLowerBrain(1.0);
+        normalBrain.add(nGrey, nWhite, nHippo, nVent, nStem);
+
+        // Alzheimer's Brain Parts (Atrophy and Enlargement Scales)
+        const aGrey = createCerebrum(0xdc8899, 0.75, true, 'high');   // Severe Cortical Atrophy
+        const aWhite = createCerebrum(0xeedc82, 0.65, false, 'high'); // White matter decay
+        const aHippo = createHippocampus(0.4);                        // Extreme Hippocampal shrinking
+        const aVent = createVentricles(2.0);                          // Massively enlarged ventricles
+        const aStem = createLowerBrain(0.95);                         // Cerebellum & Medulla mostly spared
+        adBrain.add(aGrey, aWhite, aHippo, aVent, aStem);
+
+        // 4. UI INTERACTION LOGIC
+        document.getElementById('btn-explode').onclick = function() {
+            isExploded = !isExploded;
+            this.style.background = isExploded ? "#e74c3c" : "#333";
+        };
+
+        function togglePart(btnId, partName, normalMesh, adMesh) {
+            const btn = document.getElementById(btnId);
+            btn.onclick = () => {
+                parts[partName] = !parts[partName];
+                btn.classList.toggle('active');
+                normalMesh.visible = parts[partName];
+                adMesh.visible = parts[partName];
+            };
+        }
+
+        togglePart('btn-grey', 'grey', nGrey, aGrey);
+        togglePart('btn-white', 'white', nWhite, aWhite);
+        togglePart('btn-hippo', 'hippo', nHippo, aHippo);
+        togglePart('btn-vent', 'vent', nVent, aVent);
+        togglePart('btn-stem', 'stem', nStem, aStem);
+
+        // 5. ANIMATION & EXPLODE LOGIC
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const lerpSpeed = 0.05;
+            
+            // Define explosion offsets
+            const offsetGrey = isExploded ? 4.5 : 0;
+            const offsetWhite = isExploded ? 2.5 : 0;
+            const offsetStem = isExploded ? -3.0 : 0;
+            const offsetHippoX = isExploded ? 3.0 : 0; // Moves sideways
+            
+            // Lerp Normal Brain Parts
+            nGrey.position.y += (offsetGrey - nGrey.position.y) * lerpSpeed;
+            nWhite.position.y += (offsetWhite - nWhite.position.y) * lerpSpeed;
+            nStem.position.y += (offsetStem - nStem.position.y) * lerpSpeed;
+            nHippo.position.x += (offsetHippoX - nHippo.position.x) * lerpSpeed;
+
+            // Lerp AD Brain Parts
+            aGrey.position.y += (offsetGrey - aGrey.position.y) * lerpSpeed;
+            aWhite.position.y += (offsetWhite - aWhite.position.y) * lerpSpeed;
+            aStem.position.y += (offsetStem - aStem.position.y) * lerpSpeed;
+            aHippo.position.x += (offsetHippoX - aHippo.position.x) * lerpSpeed;
+
+            // Slowly rotate the entire brain groups to view all angles
+            normalBrain.rotation.y += 0.002;
+            adBrain.rotation.y += 0.002;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>

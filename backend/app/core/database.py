@@ -27,6 +27,9 @@ class Base(DeclarativeBase):
     pass
 
 
+import app.models  # noqa: F401 - register every model with Base.metadata
+
+
 async def get_db() -> AsyncSession:
     """
     Dependency that provides a database session.
@@ -46,6 +49,8 @@ async def get_db() -> AsyncSession:
 async def init_db():
     """Create all tables (development only — use Alembic migrations in production)."""
     async with engine.begin() as conn:
+        if conn.dialect.name == "postgresql":
+            await conn.exec_driver_sql("CREATE SCHEMA IF NOT EXISTS public")
         await conn.run_sync(Base.metadata.create_all)
 
 
