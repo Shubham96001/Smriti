@@ -65,3 +65,10 @@ The goal of this project is to foster independence for patients while providing 
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    pip install -r requirements.txt
+
+### 2️⃣ Frontend Setup
+From the `frontend/` directory, install packages and start Vite:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
