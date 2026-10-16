@@ -1,63 +1,67 @@
-# SmritiSaathi
+<div align="center">
 
-## 1. Project overview
-SmritiSaathi is an elderly-friendly platform for cognitive games, memory notes, routine reminders, and consent-based caregiver support.
+# 🧠 SmritiSaathi
+**An elderly-friendly platform for cognitive games, memory notes, routine reminders, and consent-based caregiver support.**
 
-## 2. Intended use
-The application provides supportive activities and organization tools. It is not a diagnostic medical system.
+<br>
 
-## 3. Current scope
-The repository includes account registration, login, placeholder baseline flow, Memory Match, memory notes, reminders, caregiver approvals, and offline record scaffolding.
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 
-## 4. Technology
-The client uses React, Vite, and plain CSS. The API uses Python, FastAPI, Pydantic, psycopg, and PostgreSQL. Passwords use bcrypt and access tokens use signed HS256 JWTs.
+*Developed for the MEDHA Hackathon Problem Statement*
 
-## 5. Repository map
-New backend modules are flat domain packages under `backend/`; PostgreSQL migrations are in `backend/sql/`. Frontend routes, contexts, games, services, offline support, and styles are under `frontend/src/`. Project documentation is in `docs/`; tests are in `tests/`. The retired nested backend files and local database files remain pending cleanup.
+<br>
 
-## 6. Requirements
-Use Python 3.10 or newer, Node.js 20.19+ or 22.12+, npm, and a local PostgreSQL server. Use a current browser with IndexedDB support for offline scaffolding.
+> **Intended Use & Assessment Notice:** The application provides supportive activities and organization tools. It is **not** a diagnostic medical system. The seeded English items under `placeholder-v1` are generic development placeholders, not the real RUDAS. They have no clinical scoring or diagnostic interpretation.
+</div>
 
-## 7. Backend environment
-From the repository root, create and activate a virtual environment, then install `backend/requirements.txt`. If `backend/.env` does not already exist, copy `backend/.env.example` to it. Set a local database URL and a private random JWT secret without replacing existing local credentials.
+---
 
-## 8. Configuration
-`DATABASE_URL` accepts a PostgreSQL libpq URL. `JWT_SECRET_KEY`, `JWT_ACCESS_TOKEN_EXPIRE_MINUTES`, and `FRONTEND_ORIGIN` configure authentication and browser access. Never commit the local `.env`.
+## 📖 What is SmritiSaathi? (Project Details)
 
-## 9. Database migrations
-Run `python sql/run_migrations.py` from `backend/`. The runner applies numbered SQL files in lexical order and tracks successful versions.
+SmritiSaathi (meaning "Memory Companion") is a comprehensive digital platform specifically designed to support elderly individuals, particularly those navigating cognitive decline or early-stage dementia. 
 
-## 10. Start the API
-From `backend/`, run `python -m uvicorn main:app --reload --port 8000`. Health is available at `/api/health`; interactive OpenAPI docs are at `/docs`.
+The goal of this project is to foster independence for patients while providing peace of mind for their families. It bridges the gap between daily cognitive exercises and structured caregiving through an accessible, elderly-friendly interface.
 
-## 11. Frontend setup
-From `frontend/`, run `npm install` and `npm run dev`. Vite serves the app on port 5173 and proxies `/api` to the local API.
+**How it helps:**
+*   **For Patients:** Offers a simplified dashboard to play adaptive cognitive games (like Memory Match), read personal memory notes, and view daily routine reminders.
+*   **For Caregivers:** Provides a secure, consent-based portal to monitor activity, send reminders, and stay connected with the patient's daily routine.
+*   **Accessibility First:** Features large touch targets, keyboard focus indicators, and a forgiving UI designed for users with limited digital literacy or physical dexterity.
 
-## 12. Authentication
-Register at `/register` as a patient, caregiver, or healthcare worker. Sign in at `/login`. The client stores the signed access token locally and sends it as a Bearer token.
+---
 
-## 13. Patient onboarding
-Patient accounts go to `/assessment/rudas`. Each response is persisted when advancing. The baseline is complete after all six placeholder items have responses; the dashboard directs incomplete accounts back to the assessment.
+## 🛠️ Technology & Architecture
 
-## 14. Assessment notice
-The seeded English items are generic development placeholders under `placeholder-v1`, not the real RUDAS. They have no clinical scoring or diagnostic interpretation.
+*   **Frontend:** React, Vite, and plain CSS.
+*   **Backend:** Python, FastAPI, Pydantic, psycopg, and PostgreSQL. 
+*   **Security:** Passwords use `bcrypt` and access tokens use signed HS256 JWTs.
 
-## 15. Patient tools
-The patient dashboard links to Memory Match, memory notes, reminders, and caregiver approvals. Activity summary values are fetched from the API.
+## 📂 Repository Map
 
-## 16. Caregiver access
-Caregivers request a connection by patient email. Patients approve or decline requests. Caregiver reads require an approved relationship; requests outside the relationship return not found.
+*   `backend/`: New backend modules are flat domain packages.
+*   `backend/sql/`: Contains PostgreSQL migrations.
+*   `frontend/src/`: Frontend routes, contexts, games, services, offline support, and styles.
+*   `docs/`: Project documentation (`architecture.md`, `api.md`, `security.md`, `demo.md`).
+*   `tests/`: Integration and unit tests.
+*   *Note: The retired nested backend files and local database files remain pending cleanup.*
 
-## 17. Adaptive difficulty
-The adaptive engine is a pure conservative rule. It changes at most one level per decision, needs more evidence to increase than to decrease, and includes unit tests.
+---
 
-## 18. Localization and accessibility
-English is the fallback locale. Hindi and Marathi files contain a small scaffold only; they are not validated translations. Controls use large touch targets, keyboard focus indicators, and optional speech output where supported.
+## 🚀 Environment Setup & Configuration
 
-## 19. Offline behavior
-The client queues sync records in IndexedDB and flushes when online. The service worker handles only static application content and never caches API responses.
+**System Requirements:**
+*   Python 3.10 or newer
+*   Node.js 20.19+ or 22.12+ and npm
+*   Local PostgreSQL server
+*   Current browser with IndexedDB support for offline scaffolding
 
-## 20. Verification and limitations
-Run `pytest -q`, `python scripts/security_audit.py`, and `cd frontend && npm run build`. Integration tests create and remove only a loopback `<database>_test` database; they skip if the test database already exists or local PostgreSQL is unavailable. Placeholder content, translations, offline replay, healthcare-worker access, and the remaining legacy-file cleanup are not complete production workflows.
-
-See [docs/architecture.md](docs/architecture.md), [docs/api.md](docs/api.md), [docs/security.md](docs/security.md), and [docs/demo.md](docs/demo.md) for implementation details.
+### 1️⃣ Backend Setup
+1. From the repository root, create and activate a virtual environment, then install dependencies:
+   ```bash
+   cd backend
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
